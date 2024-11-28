@@ -1,18 +1,8 @@
-package transfer
+package transport
 
 import (
 	"go-quic/streams"
 )
-
-type Packet_ interface {
-	Go(s *streams.Stream)
-	Resend(s *streams.Stream)
-	CanBeSent(s *streams.Stream)
-}
-
-type Packet struct {
-	PacketId int
-}
 
 func (p *Packet) Go(s streams.Stream) (int, error) {
 	//check if the stream can send this packet
