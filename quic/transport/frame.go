@@ -12,8 +12,8 @@ package transport
 //MAX_STREAM_DATA
 
 type Frame struct {
-	FrameType uint
-	FIN       uint8
+	FrameType int
+	FIN       int8
 }
 
-func (f Frame) IsOfType(frameType uint) bool { return f.FrameType == frameType }
+func (f Frame) IsOfType(frameType int) bool { return f.FrameType == frameType }

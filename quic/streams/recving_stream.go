@@ -6,7 +6,6 @@ import (
 )
 
 type RecvingEnd struct {
-	Id               StreamId
 	StateManager     *StateManager           //manage state of the sream from here
 	FlowCotrolLimit  int                     //dont't send packate of it exids this
 	connection       *connections.Connection //the connection this stream belongs to
@@ -21,10 +20,13 @@ func (s *Stream) Receive() int {
 	if s.isInConnection(s.connection) {
 		//data from an exsting stream
 	} else {
-		//new stream creation and state handling
-		if s.lastUnreadPacket.Frame.IsOfType(transport.STREAM) ||
-			s.lastUnreadPacket.Frame.IsOfType(transport.STREAM_DATA_BLOCKED) {
-			s.RecvingEnd.StateManager.toRecv()
+		//this are the only frame types that change states on in a recving/sending stream
+		stream_ := s.lastUnreadPacket.Frame.IsOfType(transport.STREAM)
+		stream_data_blocked_ := s.lastUnreadPacket.Frame.IsOfType(transport.STREAM_DATA_BLOCKED)
+		reset_stream_ := s.lastUnreadPacket.Frame.IsOfType(transport.RESET_STREAM)
+
+		if stream_ || stream_data_blocked_ || reset_stream_ {
+			//handle the state chane
 
 		}
 	}

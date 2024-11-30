@@ -41,3 +41,9 @@ func NewQuicConnection(raddr net.UDPAddr, laddr net.UDPAddr) (*Connection, error
 	quicConn.UdpConn = udpConn
 	return &quicConn, nil
 }
+
+func (c *Connection) GetNextStreamId(streamType uint8) uint64 {
+	var streamId uint64
+
+	return streamId
+}
