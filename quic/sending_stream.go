@@ -1,8 +1,4 @@
-package streams
-
-import (
-	"go-quic/quic/transport"
-)
+package quic
 
 type SendindEnd struct {
 	StateManager    *StateManager //manage state of the sream from here
@@ -11,39 +7,46 @@ type SendindEnd struct {
 }
 
 // sending  end
-func (s SendindEnd) Send(p transport.Packet) int {
+func (s *Stream) Send(p Packet) int {
+	sendingEnd := s.SendindEnd
 	//we can also delay giving id to a stream till it sends its first stream
 	var byteSent int
 	//check packate is within the flow control set by peer
 	//transition to SEND state
 
-	newState := s.StateManager.getNextState((p.Frame.FrameType))
-	s.StateManager.state = newState
+	newState := sendingEnd.StateManager.getNextState((p.Frame.FrameType))
+	sendingEnd.StateManager.state = newState
 
 	//if we are blocked from sending by the flow_control_limit then we send STREAM_SEND_BLOCKED
 
 	return byteSent
 }
 
-func (s SendindEnd) End(p transport.Packet) int {
+func (s *Stream) End(p Packet) int {
+	sendingEnd := s.SendindEnd
 	var byteSent int
 	//send a STREAM + FIN frame
 	//trnasition to stream state data sent
-	if s.StateManager.state == STREAM_STATE_DATA_SENT {
+	if sendingEnd.StateManager.state == STREAM_STATE_DATA_SENT {
 		return byteSent
 	}
 
-	newState := s.StateManager.getNextState(transport.FIN)
-	s.StateManager.state = newState
+	newState := sendingEnd.StateManager.getNextState(FIN)
+	sendingEnd.StateManager.state = newState
 	return byteSent
 }
 
-func (s SendindEnd) Reset() {
+func (s *Stream) Reset() {
+	sendingEnd := s.SendindEnd
 	//check if stream is not in terminal state
 	//send a RESET_STREAM frame
 	//transition to RESET_SENT when recieve an ACK
 
-	newState := s.StateManager.getNextState(transport.RESET_STREAM)
-	s.StateManager.state = newState
+	newState := sendingEnd.StateManager.getNextState(RESET_STREAM)
+	sendingEnd.StateManager.state = newState
 
+}
+
+func (s SendindEnd) isTerminated() bool {
+	return s.StateManager.isTerminated()
 }

@@ -1,40 +1,36 @@
-package streams
-
-import (
-	"go-quic/quic/transport"
-)
+package quic
 
 // a state manager for managing the state of streams
 // map currentState -> posiible states -> next state
 var frameToNextstate = map[int]map[int]int{
 	//sending states
 	STREAM_STATE_READY: {
-		transport.STREAM:              STREAM_STATE_SEND,
-		transport.STREAM_DATA_BLOCKED: STREAM_STATE_SEND,
-		transport.RESET_STREAM:        STREAM_STATE_RESET_SENT,
+		STREAM:              STREAM_STATE_SEND,
+		STREAM_DATA_BLOCKED: STREAM_STATE_SEND,
+		RESET_STREAM:        STREAM_STATE_RESET_SENT,
 	},
 	STREAM_STATE_SEND: {
-		transport.FIN:          STREAM_STATE_DATA_SENT,
-		transport.RESET_STREAM: STREAM_STATE_RESET_SENT,
+		FIN:          STREAM_STATE_DATA_SENT,
+		RESET_STREAM: STREAM_STATE_RESET_SENT,
 	},
 	STREAM_STATE_DATA_SENT: {
-		transport.ALL_ACK: STREAM_STATE_DATA_RECVD_SENDING,
+		ALL_ACK: STREAM_STATE_DATA_RECVD_SENDING,
 	},
 
 	//recieving states
 	STREAM_STATE_RECV: {
-		transport.FIN:          STREAM_STATE_SIZE_KNOWN,
-		transport.RESET_STREAM: STREAM_STATE_RESET_RECVD_RECVING,
+		FIN:          STREAM_STATE_SIZE_KNOWN,
+		RESET_STREAM: STREAM_STATE_RESET_RECVD_RECVING,
 	},
 	STREAM_STATE_SIZE_KNOWN: {
-		transport.FIN:          STREAM_STATE_DATA_RECVD_RECVING,
-		transport.RESET_STREAM: STREAM_STATE_RESET_SENT,
+		FIN:          STREAM_STATE_DATA_RECVD_RECVING,
+		RESET_STREAM: STREAM_STATE_RESET_SENT,
 	},
 	STREAM_STATE_DATA_RECVD_RECVING: {
-		transport.APP_READ_ALLDATA: STREAM_STATE_DATA_READ,
+		APP_READ_ALLDATA: STREAM_STATE_DATA_READ,
 	},
 	STREAM_STATE_RESET_RECVD_RECVING: {
-		transport.APP_READ_RESET: STREAM_STATE_RESET_READ,
+		APP_READ_RESET: STREAM_STATE_RESET_READ,
 	},
 }
 
@@ -45,11 +41,15 @@ type StateManager struct {
 func (s *StateManager) getNextState(frameType int) int {
 	var newState int
 	//validate frmatype value before using it to access the transition map
-	if frameType < 0 || frameType > transport.FRAME_CONST_LIMIT {
+	if frameType < 0 || frameType > FRAME_CONST_LIMIT {
 		return -1
 	}
 
 	return newState
+}
+
+func (s *StateManager) isTerminated() bool {
+	return s.state == STREAM_STATE_RESET_RECVD_RECVING
 }
 
 // // Sending

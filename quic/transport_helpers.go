@@ -1,4 +1,4 @@
-package transport
+package quic
 
 const (
 	STREAM = iota
