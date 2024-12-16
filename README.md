@@ -2,7 +2,7 @@
 
 
 <h3><b>The plan</b></h3>
-Our plan here is to build a full end to end implementation for the protocol and to build a small http3 server using it<br>
+Our plan here is to build a full end to end implementation for the protocol and to build a small http3 server on top<br>
 
 <h3><b>Listener</b></h3>
 A Listener is a quic protocol running on a specific quic port
