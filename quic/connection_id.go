@@ -19,11 +19,6 @@ func (cm *ConnectionIdManager) generateId() ConnectionId {
 	return ConnectionId{}
 }
 
-func (cm *ConnectionIdManager) retierId() error {
-	//remove the id from the pool
-	return nil
-}
-
 func (cm *ConnectionIdManager) Add(id ConnectionId) error {
 	cm.IdPool = append(cm.IdPool, id)
 	return nil

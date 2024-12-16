@@ -21,7 +21,12 @@ type Stream struct {
 func (s *Stream) getType() uint8 { return uint8(s.Id) & uint8(3) }
 
 // check if a stream belogs to a connection
-func (s *Stream) isInConnection(con *Connection) bool { return false }
+func (s *Stream) isInConnection(c *Connection) bool {
+	if c == nil {
+		return false
+	}
+	return false
+}
 
 func (s *Stream) isClientInitiated() bool { return (s.Id % 2) == 0 }
 

@@ -2,14 +2,23 @@ package quic
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net"
+	"sync"
 	// "errors"
 )
+
+var DefaultMaxStreamData = 1000
+var DefaultMaxStreams = 1000
 
 type ConnectionOps interface {
 	Open(raddr *net.UDPAddr, laddr *net.UDPAddr) (*Connection, error)
 	Listen(laddr *net.UDPAddr, cb func(conn net.UDPConn))
+}
+
+type SendBlokedChannel chan struct {
+	state  bool
+	reason string
 }
 
 type Connection struct {
@@ -21,55 +30,72 @@ type Connection struct {
 	MaxStreamData  int
 	MaxStreams     int
 	MaxIds         int    //the maximum number of connection id can be given to this connection
-	ZeroRTTUsed    bool   //is zero rtt used for this connection
 	HandshakeState string //onging, completed, failed
-	context        context.Context
+	ctx            context.Context
 
-	sendBlocked chan struct {
-		state  bool
-		reason string
-	} //if any go routine should block sending of streams
+	onClose func(con *Connection) error
+
+	sendLock *sync.Mutex
+	//if any go routine should block sending of streams
 }
 
-// creates a new QUIC connection  with a server as of RFC 9000
-func OpenConnection(raddr *net.UDPAddr, laddr *net.UDPAddr) (*Connection, error) {
+func createQuicConnection(
+	UdpConn *net.UDPConn,
+	Raddr *net.UDPAddr,
+	Laddr *net.UDPAddr,
+	MaxStreamData int,
+	MaxStreams int,
+	MaxIds int,
+	HandshakeState string,
+	ctx context.Context,
+	onClose func(con *Connection) error,
+	sendLock *sync.Mutex,
+) (*Connection, error) {
+	var err error = nil
 
-	//create a udp 'connection'
-	udpConn, err := net.DialUDP(raddr.Network(), laddr, raddr)
+	if UdpConn == nil {
+		err = errors.New("udp connection can't be nil")
+	}
+	if Raddr == nil {
+		//get it from udpConn
+	}
+
+	if MaxStreamData == 0 {
+		MaxStreamData = DefaultMaxStreamData
+	}
+
+	if MaxStreams == 0 {
+		MaxStreams = DefaultMaxStreams
+	}
+
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
 	if err != nil {
-		return nil, fmt.Errorf("couldn't send udp dial on %s from %s", raddr.String(), laddr.String())
+		return nil, err
 	}
 
-	//the quic connection "object" to be returned
-	var quicConn = Connection{
-		Raddr:   raddr,
-		Laddr:   laddr,
-		UdpConn: udpConn,
-	}
-
-	//create a tls handshake to be sent over udp
-
-	//do tls handshake
-	//send the connReq
-	//wait for a response (in a different thread) incase there is sth todo
-
-	//do the quic connection handshake
-
-	quicConn.UdpConn = udpConn
-	return &quicConn, nil
-}
-
-// liten for a connection from a client
-func Listen(laddr *net.UDPAddr, cb func(net.UDPConn)) {
-	panic("listen not implemented yet!")
-}
-
-func ListenEarly(laddr *net.UDPAddr, cb func(net.UDPConn)) {
-	panic("listen not implemented yet!")
-
+	return &Connection{
+		UdpConn:        UdpConn,
+		Raddr:          Raddr,
+		Laddr:          Laddr,
+		MaxStreamData:  MaxStreamData,
+		MaxStreams:     MaxStreams,
+		MaxIds:         MaxIds,
+		HandshakeState: "completed",
+		ctx:            ctx,
+		onClose:        onClose,
+		sendLock:       sendLock,
+	}, nil
 }
 
 func (c *Connection) Close() error {
+	if c.onClose != nil {
+		c.onClose(c)
+	}
+
+	// do the acual closing
 	panic("conn.Close not implemeted yet")
 }
 
@@ -109,5 +135,5 @@ func GetConnectionById(id uint) *Connection {
 }
 
 func (c *Connection) Context() context.Context {
-	return c.context
+	return c.ctx
 }
