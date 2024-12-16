@@ -39,6 +39,6 @@ func (s *Stream) Abort(erro_code int) {
 	s.Send(Packet{})
 }
 
-func (r RecvingEnd) isTerminated() bool {
-	return r.StateManager.isTerminated()
-}
+// func (r RecvingEnd) isTerminated() bool {
+// 	return r.StateManager.isTerminated()
+// }

@@ -12,29 +12,17 @@ import (
 
 func main() {
 	//udp address to listen on
-	udpAddr := &net.UDPAddr{
-		IP:   net.IPv4(0, 0, 0, 0),
-		Port: 8080,
-	}
+	udpAddr := &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1), Port: 8080}
 
-	//we can cancel this context and every
-	ParentContext, cancel := context.WithCancel(context.Background())
+	s := quic.CreateNewServer(context.Background()) //create a server
 
-	s := quic.CreateNewServer(ParentContext)
-	defer cancel()
-	l, err := s.Listen(
-		udpAddr,
-		func(ctx context.Context, l *quic.Listener) error {
-			fmt.Printf("server listening on %d\n", l.UdpConn.LocalAddr())
-			return nil
-		})
-
-	if err != nil {
+	var l *quic.Listener
+	var err error
+	if l, err = s.Listen(nil, udpAddr, nil); err != nil {
 		fmt.Println(err)
-
 	}
 
+	//start accepting connections on this listener
 	l.Accept(nil)
-	fmt.Print("Helllo")
 
 }

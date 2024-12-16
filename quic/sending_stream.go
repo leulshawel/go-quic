@@ -47,6 +47,6 @@ func (s *Stream) Reset() {
 
 }
 
-func (s SendindEnd) isTerminated() bool {
-	return s.StateManager.isTerminated()
-}
+// func (s SendindEnd) isTerminated() bool {
+// 	return s.StateManager.isTerminated()
+// }
