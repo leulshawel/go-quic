@@ -32,6 +32,7 @@ type Listener struct {
 	MaxConnections int
 	acceptChann    acceptChann
 	acceptQeue     chan net.Addr
+	quicError      bool //is the error in errorQeue a quicError or systemError
 	errorQeue      chan error
 	connections    []*Connection
 	ctx            context.Context
@@ -56,6 +57,11 @@ func CreateNewListener(
 	maxConns int,
 	onClose func(con *Connection) error,
 ) (*Listener, error) {
+
+	if udpConn == nil && laddr == nil {
+		return nil, errors.New("udpConn or laddr is required")
+	}
+
 	if udpConn != nil && laddr != nil {
 		if laddr == udpConn.LocalAddr() {
 			return nil, errors.New("udpConn.LocalAddr != laddr")
@@ -131,10 +137,10 @@ func (l *Listener) accept() {
 				&l.sendLock,
 			)
 
-			if err != nil {
-				l.acceptChann.errChan <- err
-			} else {
+			if err == nil {
 				l.acceptChann.connChan <- conn
+			} else {
+				l.acceptChann.errChan <- err
 			}
 		case <-l.ctx.Done():
 			l.errorQeue <- l.ctx.Err()
@@ -159,8 +165,14 @@ func (l *Listener) CloseAll() []error {
 func (l *Listener) errorHandler() {
 	for {
 		err := <-l.errorQeue
-		if err == context.Canceled {
+		if l.quicError {
+			//handle quicError
 			return
+		} else {
+			if err == l.ctx.Err() {
+				return
+			}
+
 		}
 	}
 
